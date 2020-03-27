@@ -29,7 +29,7 @@ curr <- read_csv("csse_covid_19_data/csse_covid_19_daily_reports/03-24-2020.csv"
 ```
 
 ```{r}
-df_confirm <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv") %>%
+df_confirmed <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv") %>%
     rename(
         state = `Province/State`,
         country = `Country/Region`,
@@ -57,7 +57,22 @@ df_deaths <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_
     ) %>%
     mutate_at("date", as_date, format = "%m/%d/%y", tz = "UTC")
 
-df_ts <- left_join(df_confirm, df_deaths)
+df_recovered <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv") %>%
+    rename(
+        state = `Province/State`,
+        country = `Country/Region`,
+        lat = Lat,
+        long = Long
+    ) %>%
+    pivot_longer(
+        cols = c(-state, -country, -lat, -long), 
+        names_to = "date", 
+        values_to = "recovered"
+    ) %>%
+    mutate_at("date", as_date, format = "%m/%d/%y", tz = "UTC")
+
+df_ts <- left_join(df_confirmed, df_deaths) %>%
+    left_join(df_recovered)
 ```
 
 ```{r}
