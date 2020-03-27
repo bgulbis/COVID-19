@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```{r}
 library(tidyverse)
 library(lubridate)
+library(themebg)
 ```
 
 ```{r}
@@ -76,7 +77,136 @@ df_ts <- left_join(df_confirmed, df_deaths) %>%
 ```
 
 ```{r}
+df_country <- df_ts %>%
+    group_by(country, date) %>%
+    summarize_at(c("confirmed", "deaths", "recovered"), sum, na.rm = TRUE) %>%
+    ungroup() %>%
+    mutate(active = confirmed - deaths - recovered) %>%
+    group_by(country) %>%
+    mutate(new_cases = confirmed - lag(confirmed))
 
+df_case1 <- df_country %>%
+    group_by(country) %>%
+    arrange(date, country) %>%
+    filter(confirmed > 0) %>%
+    distinct(country, .keep_all = TRUE) %>%
+    select(country, date_case1 = date)
+
+df_case50 <- df_country %>%
+    group_by(country) %>%
+    arrange(date, country) %>%
+    filter(confirmed > 50) %>%
+    distinct(country, .keep_all = TRUE) %>%
+    select(country, date_case50 = date)
+    
+df_data <- df_country %>%
+    left_join(df_case1) %>%
+    left_join(df_case50) %>%
+    mutate(
+        day_case1 = difftime(date, date_case1, units = "days"),
+        day_case50 = difftime(date, date_case50, units = "days"),
+        usa = country == "US"
+    ) %>%
+    mutate_at(c("day_case1", "day_case50"), as.numeric)
 ```
 
+```{r}
+df_data %>%
+    filter(day_case1 >= 0) %>%
+    ggplot(aes(x = day_case1, y = confirmed, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case1 >= 0) %>%
+    ggplot(aes(x = day_case1, y = deaths, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case1 >= 0) %>%
+    ggplot(aes(x = day_case1, y = recovered, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case1 >= 0) %>%
+    ggplot(aes(x = day_case1, y = active, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case1 >= 0) %>%
+    ggplot(aes(x = day_case1, y = new_cases, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case50 >= 0) %>%
+    ggplot(aes(x = day_case50, y = confirmed, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case50 >= 0) %>%
+    ggplot(aes(x = day_case50, y = deaths, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case50 >= 0) %>%
+    ggplot(aes(x = day_case50, y = recovered, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case50 >= 0) %>%
+    ggplot(aes(x = day_case50, y = active, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
+
+```{r}
+df_data %>%
+    filter(day_case50 >= 0) %>%
+    ggplot(aes(x = day_case50, y = new_cases, color = country, size = usa)) +
+    geom_line() +
+    scale_size_discrete(NULL, range = c(0, 1.5)) +
+    theme_bg() +
+    theme(legend.position = "none")
+```
 
