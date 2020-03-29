@@ -17,7 +17,7 @@ library(lubridate)
 library(themebg)
 ```
 
-```{r}
+```{r, eval=FALSE}
 data_dir <- "csse_covid_19_data/csse_covid_19_daily_reports"
 
 # f <- list.files(data_dir, pattern = "csv", full.names = TRUE)
@@ -83,7 +83,10 @@ df_country <- df_ts %>%
     ungroup() %>%
     mutate(active = confirmed - deaths - recovered) %>%
     group_by(country) %>%
-    mutate(new_cases = confirmed - lag(confirmed))
+    mutate(
+        new_cases = confirmed - lag(confirmed),
+        new_deaths = deaths - lag(deaths)
+    )
 
 df_case1 <- df_country %>%
     group_by(country) %>%
@@ -108,105 +111,99 @@ df_data <- df_country %>%
         usa = country == "US"
     ) %>%
     mutate_at(c("day_case1", "day_case50"), as.numeric)
+
+df_top25 <- df_data %>%
+    arrange(desc(date), country) %>%
+    distinct(country, .keep_all = TRUE) %>%
+    ungroup() %>%
+    top_n(25, confirmed)
+
+df_top12 <- df_data %>%
+    arrange(desc(date), country) %>%
+    distinct(country, .keep_all = TRUE) %>%
+    ungroup() %>%
+    top_n(12, confirmed)
+
+df_plt <- filter(df_data, confirmed >= 0)
+
+df_plt_top12 <- semi_join(df_plt, df_top12, by = "country")
+
+df_plt_day1 <- filter(df_data, day_case1 >= 0)
+
+df_plt_day1_top25 <- semi_join(df_plt_day1, df_top25, by = "country")
+
+df_plt_day1_top12 <- semi_join(df_plt_day1, df_top12, by = "country")
+
+df_plt_day50 <- filter(df_data, day_case50 >= 0)
+
+df_plt_day50_top25 <- semi_join(df_plt_day50, df_top25, by = "country")
+
 ```
 
 ```{r}
-df_data %>%
-    filter(day_case1 >= 0) %>%
-    ggplot(aes(x = day_case1, y = confirmed, color = country, size = usa)) +
-    geom_line() +
-    scale_size_discrete(NULL, range = c(0, 1.5)) +
-    theme_bg() +
-    theme(legend.position = "none")
+library(plotly)
 ```
 
-```{r}
-df_data %>%
-    filter(day_case1 >= 0) %>%
-    ggplot(aes(x = day_case1, y = deaths, color = country, size = usa)) +
-    geom_line() +
-    scale_size_discrete(NULL, range = c(0, 1.5)) +
-    theme_bg() +
-    theme(legend.position = "none")
+```{r, fig.cap="Confirmed cases by country"}
+df_plt_top12 %>%
+    plot_ly(x = ~date, y = ~confirmed, color = ~country, colors = "Paired") %>%
+    add_lines(hovertext = ~country) %>%
+    layout(showlegend = FALSE)
 ```
 
-```{r}
-df_data %>%
-    filter(day_case1 >= 0) %>%
-    ggplot(aes(x = day_case1, y = recovered, color = country, size = usa)) +
-    geom_line() +
-    scale_size_discrete(NULL, range = c(0, 1.5)) +
-    theme_bg() +
-    theme(legend.position = "none")
+```{r, fig.cap="Deaths by country"}
+df_plt_top12 %>%
+    plot_ly(x = ~date, y = ~deaths, color = ~country, colors = "Paired") %>%
+    add_lines(hovertext = ~country) %>%
+    layout(showlegend = FALSE)
 ```
 
-```{r}
-df_data %>%
-    filter(day_case1 >= 0) %>%
-    ggplot(aes(x = day_case1, y = active, color = country, size = usa)) +
-    geom_line() +
-    scale_size_discrete(NULL, range = c(0, 1.5)) +
-    theme_bg() +
-    theme(legend.position = "none")
+```{r, fig.cap="Confirmed cases since first case reported in each country. Includes top 12 countries by number of cumulative cases."}
+df_plt_day1_top12 %>%
+    plot_ly(x = ~day_case1, y = ~confirmed, color = ~country, colors = "Paired") %>%
+    add_lines(hovertext = ~country) %>%
+    layout(showlegend = FALSE)
 ```
 
-```{r}
-df_data %>%
-    filter(day_case1 >= 0) %>%
+```{r, fig.cap="Deaths since first case reported in each country"}
+df_plt_day1_top12 %>%
+    plot_ly(x = ~day_case1, y = ~deaths, color = ~country, colors = "Paired") %>%
+    add_lines(hovertext = ~country) %>%
+    layout(showlegend = FALSE)
+```
+
+```{r, fig.cap="New cases reported each day by country"}
+df_plt_day1_top12 %>%
+    plot_ly(x = ~day_case1, y = ~new_cases, color = ~country, colors = "Paired") %>%
+    add_lines(hovertext = ~country) %>%
+    layout(showlegend = FALSE)
+```
+
+```{r, fig.cap="New deaths reported each day by country"}
+df_plt_day1_top12 %>%
+    plot_ly(x = ~day_case1, y = ~new_deaths, color = ~country, colors = "Paired") %>%
+    add_lines(hovertext = ~country) %>%
+    layout(showlegend = FALSE)
+```
+
+```{r, eval=FALSE}
+df_plt_day1_top12 %>%
     ggplot(aes(x = day_case1, y = new_cases, color = country, size = usa)) +
-    geom_line() +
+    geom_smooth(se = FALSE) +
+    scale_color_brewer(NULL, palette = "Paired") +
     scale_size_discrete(NULL, range = c(0, 1.5)) +
     theme_bg() +
     theme(legend.position = "none")
 ```
 
-```{r}
-df_data %>%
-    filter(day_case50 >= 0) %>%
-    ggplot(aes(x = day_case50, y = confirmed, color = country, size = usa)) +
-    geom_line() +
+```{r, eval=FALSE}
+df_plt_day1_top12 %>%
+    ggplot(aes(x = day_case1, y = new_deaths, color = country, size = usa)) +
+    geom_smooth(se = FALSE) +
+    scale_color_brewer(NULL, palette = "Paired") +
     scale_size_discrete(NULL, range = c(0, 1.5)) +
     theme_bg() +
     theme(legend.position = "none")
 ```
 
-```{r}
-df_data %>%
-    filter(day_case50 >= 0) %>%
-    ggplot(aes(x = day_case50, y = deaths, color = country, size = usa)) +
-    geom_line() +
-    scale_size_discrete(NULL, range = c(0, 1.5)) +
-    theme_bg() +
-    theme(legend.position = "none")
-```
-
-```{r}
-df_data %>%
-    filter(day_case50 >= 0) %>%
-    ggplot(aes(x = day_case50, y = recovered, color = country, size = usa)) +
-    geom_line() +
-    scale_size_discrete(NULL, range = c(0, 1.5)) +
-    theme_bg() +
-    theme(legend.position = "none")
-```
-
-```{r}
-df_data %>%
-    filter(day_case50 >= 0) %>%
-    ggplot(aes(x = day_case50, y = active, color = country, size = usa)) +
-    geom_line() +
-    scale_size_discrete(NULL, range = c(0, 1.5)) +
-    theme_bg() +
-    theme(legend.position = "none")
-```
-
-```{r}
-df_data %>%
-    filter(day_case50 >= 0) %>%
-    ggplot(aes(x = day_case50, y = new_cases, color = country, size = usa)) +
-    geom_line() +
-    scale_size_discrete(NULL, range = c(0, 1.5)) +
-    theme_bg() +
-    theme(legend.position = "none")
-```
 
