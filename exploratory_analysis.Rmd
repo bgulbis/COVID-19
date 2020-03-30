@@ -108,7 +108,8 @@ df_data <- df_country %>%
     mutate(
         day_case1 = difftime(date, date_case1, units = "days"),
         day_case50 = difftime(date, date_case50, units = "days"),
-        usa = country == "US"
+        usa = country == "US",
+        str_date = as.character(date)
     ) %>%
     mutate_at(c("day_case1", "day_case50"), as.numeric)
 
@@ -124,9 +125,12 @@ df_top12 <- df_data %>%
     ungroup() %>%
     top_n(12, confirmed)
 
-df_plt <- filter(df_data, confirmed >= 0)
+df_plt <- filter(df_data, confirmed > 0) %>%
+    group_by(country, date) %>%
+    mutate(death_rate = deaths / confirmed * 100) %>%
+    ungroup()
 
-df_plt_top12 <- semi_join(df_plt, df_top12, by = "country")
+df_plt_top12 <- semi_join(df_plt, df_top12, by = "country") 
 
 df_plt_day1 <- filter(df_data, day_case1 >= 0)
 
@@ -144,6 +148,8 @@ df_plt_day50_top25 <- semi_join(df_plt_day50, df_top25, by = "country")
 library(plotly)
 ```
 
+# Top 12 countries by confirmed cases
+
 ```{r, fig.cap="Confirmed cases by country"}
 df_plt_top12 %>%
     plot_ly(x = ~date, y = ~confirmed, color = ~country, colors = "Paired") %>%
@@ -158,7 +164,14 @@ df_plt_top12 %>%
     layout(showlegend = FALSE)
 ```
 
-```{r, fig.cap="Confirmed cases since first case reported in each country. Includes top 12 countries by number of cumulative cases."}
+```{r, fig.cap="Death rate by country"}
+df_plt_top12 %>%
+    plot_ly(x = ~date, y = ~death_rate, color = ~country, colors = "Paired") %>%
+    add_lines(hovertext = ~country) %>%
+    layout(showlegend = FALSE)
+```
+
+```{r, fig.cap="Confirmed cases since first case reported in each country"}
 df_plt_day1_top12 %>%
     plot_ly(x = ~day_case1, y = ~confirmed, color = ~country, colors = "Paired") %>%
     add_lines(hovertext = ~country) %>%
@@ -205,5 +218,19 @@ df_plt_day1_top12 %>%
     theme_bg() +
     theme(legend.position = "none")
 ```
+
+```{r, fig.cap="Confirmed cases by country over time"}
+df_plt %>%
+    plot_ly(
+        type = "scattergeo",
+        locationmode = "country names", 
+        locations = ~country, 
+        size = ~confirmed,
+        frame = ~str_date,
+        showlegend = FALSE
+    ) %>%
+    layout(geo = list(projection = list(type = "natural earth")))
+```
+
 
 
