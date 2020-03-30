@@ -20,13 +20,9 @@ library(themebg)
 ```{r, eval=FALSE}
 data_dir <- "csse_covid_19_data/csse_covid_19_daily_reports"
 
-# f <- list.files(data_dir, pattern = "csv", full.names = TRUE)
+f <- list.files(data_dir, pattern = "csv", full.names = TRUE)
 
-# x <- map(f, read_csv)
-# raw_daily <- map_df(f, read_csv)
-# day1 <- read_csv("csse_covid_19_data/csse_covid_19_daily_reports/01-22-2020.csv")
-# yest <- read_csv("csse_covid_19_data/csse_covid_19_daily_reports/03-22-2020.csv")
-curr <- read_csv("csse_covid_19_data/csse_covid_19_daily_reports/03-24-2020.csv")
+curr <- read_csv(f[length(f)])
 ```
 
 ```{r}
@@ -186,15 +182,15 @@ df_plt_day1_top12 %>%
 ```
 
 ```{r, fig.cap="New cases reported each day by country"}
-df_plt_day1_top12 %>%
-    plot_ly(x = ~day_case1, y = ~new_cases, color = ~country, colors = "Paired") %>%
+df_plt_top12 %>%
+    plot_ly(x = ~date, y = ~new_cases, color = ~country, colors = "Paired") %>%
     add_lines(hovertext = ~country) %>%
     layout(showlegend = FALSE)
 ```
 
 ```{r, fig.cap="New deaths reported each day by country"}
-df_plt_day1_top12 %>%
-    plot_ly(x = ~day_case1, y = ~new_deaths, color = ~country, colors = "Paired") %>%
+df_plt_top12 %>%
+    plot_ly(x = ~date, y = ~new_deaths, color = ~country, colors = "Paired") %>%
     add_lines(hovertext = ~country) %>%
     layout(showlegend = FALSE)
 ```
