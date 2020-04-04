@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```{r}
 library(tidyverse)
 library(lubridate)
+# library(rjson)
 library(themebg)
 ```
 
@@ -25,7 +26,18 @@ f <- list.files(data_dir, pattern = "csv", full.names = TRUE)
 curr <- read_csv(f[length(f)]) %>%
     arrange(Country_Region, Province_State, Admin2)
 
-curr_us <- filter(curr, !is.na(FIPS))
+prev <- read_csv("csse_covid_19_data/csse_covid_19_daily_reports/03-30-2020.csv") %>%
+    arrange(Country_Region, Province_State, Admin2)
+
+miss <- anti_join(prev, curr, by = "Combined_Key")
+
+curr_us <- curr %>%
+    bind_rows(miss) %>%
+    filter(!is.na(FIPS))
+
+url = 'https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json'
+counties <- rjson::fromJSON(file = url)
+# json_file$features[[1]]$id
 ```
 
 ```{r}
@@ -73,6 +85,40 @@ df_recovered <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_seri
 
 df_ts <- left_join(df_confirmed, df_deaths) %>%
     left_join(df_recovered)
+
+df_confirmed_us <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>%
+    rename(
+        state = `Province_State`,
+        country = `Country_Region`,
+        long = Long_,
+        key = Combined_Key
+    ) %>%
+    rename_all(str_to_lower) %>%
+    pivot_longer(
+        cols = -(uid:key), 
+        names_to = "date", 
+        values_to = "confirmed"
+    ) %>%
+    mutate_at("date", as_date, format = "%m/%d/%y", tz = "UTC")
+
+df_deaths_us <- read_csv("csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv") %>%
+    rename(
+        state = `Province_State`,
+        country = `Country_Region`,
+        long = Long_,
+        key = Combined_Key
+    ) %>%
+    rename_all(str_to_lower) %>%
+    pivot_longer(
+        cols = -(uid:population), 
+        names_to = "date", 
+        values_to = "deaths"
+    ) %>%
+    mutate_at("date", as_date, format = "%m/%d/%y", tz = "UTC")
+
+df_ts_us <- left_join(df_confirmed_us, df_deaths_us) %>%
+    mutate(str_date = as.character(date))
+
 ```
 
 ```{r}
@@ -231,16 +277,68 @@ df_plt %>%
     layout(geo = list(projection = list(type = "natural earth")))
 ```
 
-```{r, fig.cap="Confirmed cases by country over time", eval=FALSE}
+```{r, fig.cap="Confirmed cases by US county"}
 curr_us %>%
     plot_ly(
         type = "choropleth",
-        locationmode = "USA_states",
+        geojson = counties,
+        # locationmode = "USA_states",
         locations = ~FIPS, 
-        color = ~Confirmed,
+        text = ~Combined_Key,
+        z = ~Confirmed,
+        zmin = 0,
+        zmax = 100,
+        # hovertemplate = "%{Combined_Key}: %{Confirmed}",
+        colorscale = "Reds",
         # frame = ~str_date,
         showlegend = FALSE
     ) %>%
     layout(geo = list(projection = list(type = 'albers usa')))
 ```
 
+```{r, fig.cap="Deaths by US county"}
+curr_us %>%
+    plot_ly(
+        type = "choropleth",
+        geojson = counties,
+        locations = ~FIPS, 
+        text = ~Combined_Key,
+        z = ~Deaths,
+        zmin = 0,
+        zmax = 10,
+        colorscale = "Reds",
+        # frame = ~str_date,
+        showlegend = FALSE
+    ) %>%
+    layout(geo = list(projection = list(type = 'albers usa')))
+```
+
+```{r, fig.cap="Confirmed cases by US county over time", eval=FALSE}
+# df_ts_us %>%
+#     plot_ly(
+#         type = "scattergeo",
+#         locationmode = "country names", 
+#         locations = ~country, 
+#         size = ~confirmed,
+#         frame = ~str_date,
+#         showlegend = FALSE
+#     ) %>%
+#     layout(geo = list(projection = list(type = "natural earth")))
+
+df_ts_us %>%
+    plot_ly(
+        type = "choropleth",
+        geojson = counties,
+        # locationmode = "USA_states",
+        locations = ~fips, 
+        text = ~key,
+        z = ~confirmed,
+        zmin = 0,
+        zmax = 100,
+        # hovertemplate = "%{Combined_Key}: %{Confirmed}",
+        colorscale = "Reds",
+        frame = ~str_date,
+        showlegend = FALSE
+    ) %>%
+    layout(geo = list(projection = list(type = 'albers usa')))
+```
