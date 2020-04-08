@@ -233,14 +233,14 @@ df_plt_day1_top12 %>%
 ```{r, fig.cap="New cases reported each day by country"}
 df_plt_top12 %>%
     plot_ly(x = ~date, y = ~new_cases, color = ~country, colors = "Paired") %>%
-    add_lines(hovertext = ~country) %>%
+    add_bars(hovertext = ~country) %>%
     layout(showlegend = FALSE)
 ```
 
 ```{r, fig.cap="New deaths reported each day by country"}
 df_plt_top12 %>%
     plot_ly(x = ~date, y = ~new_deaths, color = ~country, colors = "Paired") %>%
-    add_lines(hovertext = ~country) %>%
+    add_bars(hovertext = ~country) %>%
     layout(showlegend = FALSE)
 ```
 
