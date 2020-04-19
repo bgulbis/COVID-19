@@ -130,7 +130,11 @@ df_country <- df_ts %>%
     group_by(country) %>%
     mutate(
         new_cases = confirmed - lag(confirmed),
-        new_deaths = deaths - lag(deaths)
+        new_deaths = deaths - lag(deaths),
+        growth_ratio = confirmed / lag(confirmed)
+    ) %>%
+    mutate(
+        growth_factor = new_cases / lag(new_cases)
     )
 
 df_case1 <- df_country %>%
