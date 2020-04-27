@@ -3809,8 +3809,8 @@ out.head(20)
 
 # %%
 view_preds = pd.merge(out, test[['ForecastId', 'Date', 'Place']], on='ForecastId')\
-      .sort_values('ForecastId')\
-          .groupby('Place').last()[['Date', 'ConfirmedCases', 'Fatalities']]
+      .sort_values('ForecastId')
+        #   .groupby('Place').last()[['Date', 'ConfirmedCases', 'Fatalities']]
 
 # %%
 view_preds.head(20)
