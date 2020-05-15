@@ -136,12 +136,15 @@ df_info = df_info.drop(columns=['Date', 'Confirmed', 'Deaths'])
 df_info = df_info.drop_duplicates()
 
 df_counts = df_world.copy()
-df_counts = df_counts.drop(columns=['Lat', 'Long', 'Population'])
-# df_counts_long = df_counts.melt(
-#     id_vars=['County', 'State', 'Country', 'Date', 'Place'], 
-#     var_name='Type', 
-#     value_name='Counts'
-# )
+df_counts = df_counts.drop(
+    columns=['Country', 'State', 'County', 'Lat', 'Long', 'Population']
+)
+
+df_counts_long = df_counts.melt(
+    id_vars=['Date', 'Place'], 
+    var_name='Type', 
+    value_name='Counts'
+)
 
 # %%
 # df_grp_global = df_merge_global.copy()
@@ -182,8 +185,8 @@ df_counts = df_counts.drop(columns=['Lat', 'Long', 'Population'])
 df_info.to_csv('data/place_info.csv', index=False)
 # df_info_us.to_csv('data/info_us.csv', index=False)
 
-df_counts.to_csv('data/daily_counts.csv', index=False)
-# df_counts_long.to_csv('data/daily_counts_long.csv', index=False)
+# df_counts.to_csv('data/daily_counts.csv', index=False)
+df_counts_long.to_csv('data/daily_counts_long.csv', index=False)
 
 # df_grp_global.to_csv('data/daily_global_calcs.csv', index=False)
 # df_grp_us.to_csv('data/daily_us_calcs.csv', index=False)
