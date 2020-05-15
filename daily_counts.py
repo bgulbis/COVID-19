@@ -89,11 +89,17 @@ df_merge_us = df_merge_us.rename(
     columns={"Admin2": "County", "Province_State": "State", "Country_Region": "Country", "Long_": "Long"}
 )
 
-df_merge_global['Place'] = df_merge_global['Country'].str.cat(df_merge_global['State'], sep='_', na_rep='')
-df_merge_us['Place'] = df_merge_us['Country'].str.cat([df_merge_us['State'], df_merge_us['County']], sep='_', na_rep='')
+df_merge_global['Place'] = df_merge_global['Country'].str.cat(
+    df_merge_global['State'], 
+    sep='_', 
+    na_rep=''
+)
 
-# df_merge_global['State'] = df_merge_global['State'].fillna('')
-# df_merge_us['County'] = df_merge_us['County'].fillna('')
+df_merge_us['Place'] = df_merge_us['Country'].str.cat(
+    [df_merge_us['State'], df_merge_us['County']], 
+    sep='_', 
+    na_rep=''
+)
 
 # %%
 df_pop = pd.read_csv('extra_data/population-sizes-worldwide/population_sizes.csv')
@@ -102,32 +108,7 @@ df_pop = df_pop[df_pop['Country'] != 'US']
 df_pop = df_pop.drop(columns='Source')
 df_merge_global = df_merge_global.merge(df_pop, on=['Country', 'State'])
 
-# df_world_pop = df_pop.copy()
-# df_world_pop = df_world_pop[df_world_pop['Country_Region'] != 'US']
-
-# df_us_pop = df_pop.copy()
-# df_us_pop = df_us_pop[df_us_pop['Country_Region'] == 'US']
-# df_us_pop = df_us_pop.groupby(['Country_Region']).sum().reset_index()
-
-# df_pop = pd.concat([df_world_pop, df_us_pop])
-# df_pop = df_pop.rename(columns={"Country_Region": "Country", "Province_State": "State"})
-# df_pop = df_pop.drop(columns=['Source'])
-
-# df_merge_global = df_merge_global.merge(df_pop, on=['Country', 'State'])
-
 # %%
-# df_info_global = df_merge_global.copy()
-# df_info_global = df_info_global.drop(columns=['Date', 'Confirmed', 'Deaths'])
-# df_info_global = df_info_global.drop_duplicates()
-
-# df_counts_global = df_merge_global.copy()
-# df_counts_global = df_counts_global.drop(columns=['Lat', 'Long', 'Population'])
-# df_counts_global = df_counts_global.melt(
-#     id_vars=['State', 'Country', 'Date', 'Place'], 
-#     var_name='Type', 
-#     value_name='Counts'
-# )
-
 df_world = pd.concat([df_merge_global, df_merge_us])
 df_world = df_world.sort_values(['Country', 'State', 'County', 'Date'])
 
@@ -147,49 +128,8 @@ df_counts_long = df_counts.melt(
 )
 
 # %%
-# df_grp_global = df_merge_global.copy()
-# df_grp_global['State'] = df_grp_global['State'].fillna('')
-# df_grp_global = df_grp_global.groupby(['Country', 'State', 'Date']).sum()
-
-# cols = ['Confirmed', 'Deaths', 'Recovered', 'Active']
-# for col in cols:
-#     df_grp_global['New' + col] = df_grp_global[col] - df_grp_global[col].shift()
-
-# df_grp_global = df_grp_global.reset_index()
-
-# for col in cols:
-#     df_grp_global[col + 'PerCap'] = df_grp_global[col] / df_grp_global['Population']
-#     df_grp_global[col + 'Per100K'] = df_grp_global[col + 'PerCap'] * 100_000
-#     df_grp_global['New' + col + 'PerCap'] = df_grp_global['New' + col] / df_grp_global['Population']
-#     df_grp_global['New' + col + 'Per100K'] = df_grp_global['New' + col + 'PerCap'] * 100_000
-
-# %%
-# df_grp_us = df_merge_us.copy()
-# df_grp_us['County'] = df_grp_us['County'].fillna('')
-# df_grp_us = df_grp_us.groupby(['Country', 'State', 'County', 'Date']).sum()
-
-# cols = ['Confirmed', 'Deaths']
-# for col in cols:
-#     df_grp_us['New' + col] = df_grp_us[col] - df_grp_us[col].shift()
-#     df_grp_us['New' + col] = df_grp_us['New' + col].fillna(0)
-
-# df_grp_us = df_grp_us.reset_index()
-
-# for col in cols:
-#     df_grp_us[col + 'PerCap'] = df_grp_us[col] / df_grp_us['Population']
-#     df_grp_us[col + 'Per100K'] = df_grp_us[col + 'PerCap'] * 100_000
-#     df_grp_us['New' + col + 'PerCap'] = df_grp_us['New' + col] / df_grp_us['Population']
-#     df_grp_us['New' + col + 'Per100K'] = df_grp_us['New' + col + 'PerCap'] * 100_000
-
-# %%
 df_info.to_csv('data/place_info.csv', index=False)
-# df_info_us.to_csv('data/info_us.csv', index=False)
-
-# df_counts.to_csv('data/daily_counts.csv', index=False)
 df_counts_long.to_csv('data/daily_counts_long.csv', index=False)
-
-# df_grp_global.to_csv('data/daily_global_calcs.csv', index=False)
-# df_grp_us.to_csv('data/daily_us_calcs.csv', index=False)
 
 # %%
 # save data to Excel
