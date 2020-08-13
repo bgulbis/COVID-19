@@ -1,9 +1,12 @@
 # %%
 import pandas as pd
+import os
 
 # %%
 ts_path = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/'
 # %%
+print('Getting latest data')
+
 df_confirmed = pd.read_csv(ts_path + 'time_series_covid19_confirmed_global.csv')
 
 df_confirmed = df_confirmed.melt(
@@ -25,6 +28,7 @@ df_confirmed_us = df_confirmed_us.melt(
     value_name='Confirmed'
 )
 
+df_confirmed_us = df_confirmed_us[~df_confirmed_us['Date'].str.contains('.1', regex=False)]
 df_confirmed_us['Date'] = pd.to_datetime(df_confirmed_us['Date'], format='%m/%d/%y')
 
 # %%
@@ -49,6 +53,7 @@ df_deaths_us = df_deaths_us.melt(
     value_name='Deaths'
 )
 
+df_deaths_us = df_deaths_us[~df_deaths_us['Date'].str.contains('.1', regex=False)]
 df_deaths_us['Date'] = pd.to_datetime(df_deaths_us['Date'], format='%m/%d/%y')
 
 # %%
@@ -102,7 +107,7 @@ df_merge_us['Place'] = df_merge_us['Country'].str.cat(
 )
 
 # %%
-df_pop = pd.read_csv('extra_data/population-sizes-worldwide/population_sizes.csv')
+df_pop = pd.read_csv('d:/Projects/data_projects/COVID-19/extra_data/population-sizes-worldwide/population_sizes.csv')
 df_pop = df_pop.rename(columns={"Country_Region": "Country", "Province_State": "State"})
 df_pop = df_pop[df_pop['Country'] != 'US']
 df_pop = df_pop.drop(columns='Source')
@@ -128,12 +133,64 @@ df_counts_long = df_counts.melt(
 )
 
 # %%
-df_info.to_csv('data/place_info.csv', index=False)
-df_counts_long.to_csv('data/daily_counts_long.csv', index=False)
+print('Getting latest US tracking data')
+
+df_track = pd.read_csv('https://covidtracking.com/api/states/daily.csv')
+
+df_track['date'] = pd.to_datetime(df_track['date'], format='%Y%m%d')
+df_track = df_track.sort_values(['state', 'date'])
+df_track = df_track.drop(columns=[
+    'dataQualityGrade', 
+    'lastUpdateEt', 
+    'dateModified', 
+    'checkTimeEt', 
+    'dateChecked',
+    'hash', 
+    'commercialScore', 
+    'negativeRegularScore',
+    'negativeScore', 
+    'positiveScore', 
+    'score', 
+    'grade'
+])
+# df_track['pos_test_rate'] = df_track['positiveIncrease'] / df_track['totalTestResultsIncrease']
+# df_track = df_track.groupby(['state', 'date']).sum()
 
 # %%
-# save data to Excel
-# with pd.ExcelWriter('data/daily_counts.xlsx') as writer:
-#     df_merge_global.to_excel(writer, sheet_name='global', index=False)
-#     df_merge_us.to_excel(writer, sheet_name='us', index=False)
+print('Save to csv')
 
+# df_info.to_csv('d:/Projects/data_projects/COVID-19/data/place_info.csv', index=False)
+df_counts_long.to_csv('d:/Projects/data_projects/COVID-19/data/daily_counts_long.csv', index=False)
+df_track.to_csv('d:/Projects/data_projects/COVID-19/data/daily_states_tracking.csv', index=False)
+
+# %%
+# append new data to Excel
+
+# m = 'w'
+# if os.path.exists('data/daily_counts.xlsx'):
+#     print('Reading current data from Excel')
+
+#     curr_counts = pd.read_excel('data/daily_counts.xlsx', sheet_name='counts')
+#     new_counts = df_counts_long.merge(curr_counts, indicator=True, how='outer')
+#     new_counts = new_counts[new_counts['_merge'] != 'both']
+
+#     curr_state = pd.read_excel('data/daily_counts.xlsx', sheet_name='states')
+#     new_state = df_track.merge(curr_state, indicator=True, how='outer')
+#     new_state = new_state[new_state['_merge'] != 'both']
+
+#     m = 'a'
+# else:
+#     new_counts = df_counts_long
+#     new_state = df_track
+
+# if len(new_counts) > 0:
+#     print('Saving to Excel')
+
+#     with pd.ExcelWriter('data/daily_counts.xlsx', mode=m) as writer:
+#         new_counts.to_excel(writer, sheet_name='counts', index=False)
+#         new_state.to_excel(writer, sheet_name='states', index=False)
+
+#         if m == 'w': 
+#             df_info.to_excel(writer, sheet_name='places', index=False)
+
+# df_counts_long.to_excel('data/daily_counts_long.xlsx', index=False)
